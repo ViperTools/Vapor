@@ -84,11 +84,7 @@ int main() {
     uintptr_t workspace = getWorkspace(process);
     printf("Workspace: %x\n", workspace);
 
-    uintptr_t workspaceVTable;
-    ReadProcessMemory(process->handle, workspace, &workspaceVTable, sizeof(uintptr_t), 0);
-    printf("Workspace VTable: %x\n", workspaceVTable);
-
-    RTTICompleteObjectLocator* col = rtti_read_complete_object_locator(process, workspaceVTable - sizeof(uintptr_t));
+    RTTICompleteObjectLocator* col = rtti_read_complete_object_locator(process, workspace);
 
     for (int i = 0; i < col->classDescriptor->numBaseClasses; i++) {
         printf("%d: %s\n", i, col->classDescriptor->baseClassArray[i].typeDescriptor.name);

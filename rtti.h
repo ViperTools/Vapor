@@ -70,5 +70,5 @@ typedef struct RTTICompleteObjectLocator
     RTTIClassHierarchyDescriptor* classDescriptor; // RTTIClassHierarchyDescriptor
 } RTTICompleteObjectLocator;
 
-extern RTTICompleteObjectLocator* rtti_read_complete_object_locator(const Process* process, uintptr_t addr);
+extern RTTICompleteObjectLocator* rtti_read_complete_object_locator(const Process* process, uintptr_t objAddress);
 extern void rtti_free_complete_object_locator(RTTICompleteObjectLocator* col);
