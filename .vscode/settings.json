@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "process.h": "c",
+        "stdio.h": "c",
+        "memory.h": "c",
+        "cstdint": "c",
+        "initializer_list": "c",
+        "type_traits": "c",
+        "xutility": "c",
+        "vector.h": "c",
+        "stdint.h": "c",
+        "stddef.h": "c"
+    },
+    "Lua.diagnostics.globals": [
+        "Process"
+    ]
+}
