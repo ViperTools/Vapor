@@ -36,10 +36,8 @@ RTTIClassHierarchyDescriptor* readClassDescriptor(const Process* process, uintpt
 }
 
 RTTICompleteObjectLocator* rtti_read_complete_object_locator(const Process* process, uintptr_t objAddress) {
-    uintptr_t vftableAddress;
+    uintptr_t vftableAddress, colAddress;
     ReadProcessMemory(process->handle, objAddress, &vftableAddress, sizeof(uintptr_t), 0);
-
-    uintptr_t colAddress;
     ReadProcessMemory(process->handle, vftableAddress - sizeof(uintptr_t), &colAddress, sizeof(uintptr_t), 0);
 
     InternalRTTICompleteObjectLocator internalCol;
