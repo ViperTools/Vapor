@@ -1,5 +1,30 @@
 #include "rtti.h"
 
+typedef struct InternalRTTIBaseClassDescriptor
+{
+    uintptr_t typeDescriptorAddress;
+    DWORD numBases;
+    PMD where;
+    DWORD attributes;
+} InternalRTTIBaseClassDescriptor;
+
+typedef struct InternalRTTIClassHierarchyDescriptor
+{
+    DWORD signature;
+    DWORD attributes;
+    DWORD numBaseClasses;
+    uintptr_t baseClassArrayAddress;
+} InternalRTTIClassHierarchyDescriptor;
+
+typedef struct InternalRTTICompleteObjectLocator
+{
+    DWORD signature;
+    DWORD offset;
+    DWORD cdOffset;
+    uintptr_t typeDescriptorAddress;
+    uintptr_t classDescriptorAddress;
+} InternalRTTICompleteObjectLocator;
+
 RTTIClassHierarchyDescriptor* readClassDescriptor(const Process* process, uintptr_t addr) {
     InternalRTTIClassHierarchyDescriptor internalDescriptor;
     ReadProcessMemory(process->handle, addr, &internalDescriptor, sizeof(InternalRTTIClassHierarchyDescriptor), 0);
@@ -18,9 +43,6 @@ RTTIClassHierarchyDescriptor* readClassDescriptor(const Process* process, uintpt
     for (int i = 0; i < descriptor->numBaseClasses; i++) {
         InternalRTTIBaseClassDescriptor internalDesc;
         ReadProcessMemory(process->handle, array[i], &internalDesc, sizeof(InternalRTTIBaseClassDescriptor), 0);
-
-        void* test;
-        ReadProcessMemory(process->handle, array[i], &test, sizeof(void*), 0);
 
         RTTIBaseClassDescriptor* desc = &descriptor->baseClassArray[i];
         desc->numBases = internalDesc.numBases;

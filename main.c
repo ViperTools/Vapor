@@ -6,7 +6,7 @@
 #include <time.h>
 #include "rtti.h"
 
-enum PrintType {
+enum RBXPrintType {
     TEXT,
     INFO,
     WARNING,
@@ -22,8 +22,6 @@ uintptr_t getWorkspace(const Process* process) {
         return 1;
     }
 
-    printf("Workspace VTable (scanned): %x\n", workspaceVFTable);
-
     uintptr_t workspace = memory_scan_vftable(process, workspaceVFTable);
 
     if (!workspace) {
@@ -34,7 +32,9 @@ uintptr_t getWorkspace(const Process* process) {
     return workspace;
 }
 
-int print(const Process* process, uintptr_t printAddress, const char* str, enum PrintType type) {
+uintptr_t rbxPrintAddress;
+
+int rbx_print(const Process* process, const char* str, enum RBXPrintType type) {
     size_t strSize = (strlen(str) + 1) * sizeof(char);
     void* strAddress = VirtualAllocEx(process->handle, 0, strSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
@@ -58,17 +58,13 @@ int print(const Process* process, uintptr_t printAddress, const char* str, enum 
     };
 
     *(uintptr_t*)(&shellcode[1]) = (uintptr_t)strAddress;
-    *(uintptr_t*)(&shellcode[8]) = printAddress;
+    *(uintptr_t*)(&shellcode[8]) = rbxPrintAddress;
 
     execution_execute_shellcode(process, shellcode, sizeof(shellcode));
 
     VirtualFreeEx(process->handle, strAddress, 0, MEM_RELEASE);
 
     return 1;
-}
-
-size_t readString(const Process* process, uintptr_t addr, char* buf, size_t maxLength) {
-    return 0;
 }
 
 int main() {
@@ -81,30 +77,33 @@ int main() {
 
     printf("Opened process: %d\n", process->id);
 
+    // Scanning test
     uintptr_t workspace = getWorkspace(process);
     printf("Workspace: %x\n", workspace);
 
-    RTTICompleteObjectLocator* col = rtti_read_complete_object_locator(process, workspace);
+    // Execution test
+    rbxPrintAddress = memory_scan_signature(process, "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 64 89 25 ? ? ? ? 83 EC 1C 8B 55 ? 8D 45 ? 50 8D 4D ? E8 ? ? ? ? 83 C4 04 8B 4D ? 8D 55");
 
-    for (int i = 0; i < col->classDescriptor->numBaseClasses; i++) {
-        printf("%d: %s\n", i, col->classDescriptor->baseClassArray[i].typeDescriptor.name);
-    }
-
-    rtti_free_complete_object_locator(col);
-
-    // Test print with execution
-   /* uintptr_t printAddress = memory_scan_signature(process, "55 8B EC 6A FF 68 ? ? ? ? 64 A1 ? ? ? ? 50 64 89 25 ? ? ? ? 83 EC 1C 8B 55 ? 8D 45 ? 50 8D 4D ? E8 ? ? ? ? 83 C4 04 8B 4D ? 8D 55");
-
-    if (!printAddress) {
+    if (!rbxPrintAddress) {
         printf("Could not find print address\n");
         return 1;
     }
 
-    print(process, printAddress, "Slight is shit", WARNING);*/
+    printf("Print Address: %x\n", rbxPrintAddress);
+
+    // RTTI Test
+    RTTICompleteObjectLocator* col = rtti_read_complete_object_locator(process, workspace);
+
+    for (int i = 0; i < col->classDescriptor->numBaseClasses; i++) {
+        RTTIBaseClassDescriptor* desc = &col->classDescriptor->baseClassArray[i];
+        rbx_print(process, desc->typeDescriptor.name, TEXT);
+    }
+
+    rtti_free_complete_object_locator(col);
 
     free(process);
-    // leak_detector_print_num_addresses();
 
+    leak_detector_print_num_addresses();
 
     return 0;
 }
